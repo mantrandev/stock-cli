@@ -10,3 +10,4 @@ requires-python = ">=3.9"
 
 [project.scripts]
 stock = "stockcli.cli:main"
+crypto = "stockcli.cli:crypto_main"
