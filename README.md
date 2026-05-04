@@ -20,6 +20,14 @@ crypto <symbol>             # Crypto/USDT price (Binance) — e.g. BTC, ETH
 pip3 install --user --no-build-isolation -e .
 ```
 
+## Data Sources
+
+| Command  | Source | URL |
+|----------|--------|-----|
+| `stock`  | VPS DataFeed | `https://bgapidatafeed.vps.com.vn/getliststockdata/<SYMBOL>` |
+| `fstock` | Yahoo Finance | `https://query1.finance.yahoo.com/v8/finance/chart/<SYMBOL>` |
+| `crypto` | Binance | `https://api.binance.com/api/v3/ticker/price?symbol=<SYMBOL>USDT` |
+
 ## Notes
 
 - Portfolio state is local only in `db/portfolio.json`. `buy` and `sell` do not place real orders.
