@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 
 from stockcli.crypto import fetch_crypto
+from stockcli.fstock import fetch_fstock
 from stockcli.db import append_trade, load_db
 from stockcli.portfolio import create_trade, format_vnd, parse_share_amount, summarize_portfolio
 from stockcli.quote import fetch_quote
@@ -119,6 +120,30 @@ def show_crypto(symbol: str) -> int:
     result = fetch_crypto(symbol)
     print(f"{result['symbol']}/USDT: ${result['price']:,.2f}")
     return 0
+
+
+def show_fstock(symbol: str) -> int:
+    result = fetch_fstock(symbol)
+    exchange = f" ({result['exchange']})" if result.get("exchange") else ""
+    print(f"{result['symbol']}{exchange}: {result['price']:,.2f} {result['currency']}")
+    return 0
+
+
+def fstock_main() -> int:
+    args = sys.argv[1:]
+    if not args or args[0] in {"help", "--help", "-h"}:
+        print("Usage:\n  fstock <symbol>")
+        return 0 if args else 1
+
+    try:
+        if len(args) == 1:
+            return show_fstock(args[0])
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    print("Usage:\n  fstock <symbol>")
+    return 1
 
 
 def crypto_main() -> int:
