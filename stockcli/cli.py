@@ -4,7 +4,7 @@ import sys
 
 from stockcli.crypto import fetch_crypto
 from stockcli.fstock import fetch_fstock
-from stockcli.db import append_trade, load_db
+from stockcli.db import append_trade, load_db, save_db
 from stockcli.portfolio import create_trade, format_vnd, parse_share_amount, summarize_portfolio
 from stockcli.quote import fetch_quote
 
@@ -15,7 +15,8 @@ def print_usage() -> None:
         "  stock <symbol>\n"
         "  stock mine\n"
         "  stock buy <symbol> <price> <amount>\n"
-        "  stock sell <symbol> <price> <amount>"
+        "  stock sell <symbol> <price> <amount>\n"
+        "  stock clear"
     )
 
 
@@ -106,6 +107,11 @@ def main() -> int:
     try:
         if args[0] == "mine":
             return show_mine()
+
+        if args[0] == "clear":
+            save_db({"trades": []})
+            print("Portfolio cleared.")
+            return 0
 
         if args[0] in {"buy", "sell"}:
             if len(args) != 4:
