@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 from stockcli.crypto import fetch_crypto
 from stockcli.fstock import fetch_fstock
@@ -25,14 +26,15 @@ def format_optional_vnd(value: float | None) -> str:
 
 
 def fetch_live_prices(symbols: list[str]) -> dict[str, float | None]:
-    prices: dict[str, float | None] = {}
-    for symbol in symbols:
+    def fetch_one(symbol: str) -> tuple[str, float | None]:
         try:
-            prices[symbol] = fetch_quote(symbol)["price"]
-        except Exception as exc:  # pragma: no cover - keeps CLI resilient
-            prices[symbol] = None
+            return symbol, fetch_quote(symbol)["price"]
+        except Exception as exc:  # pragma: no cover
             print(f"Warning: could not fetch {symbol}: {exc}", file=sys.stderr)
-    return prices
+            return symbol, None
+
+    with ThreadPoolExecutor(max_workers=len(symbols) or 1) as executor:
+        return dict(executor.map(fetch_one, symbols))
 
 
 def show_quote(symbol: str) -> int:
