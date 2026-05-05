@@ -4,11 +4,10 @@ import json
 from pathlib import Path
 
 
-DB_PATH = Path(__file__).resolve().parent.parent / "db" / "portfolio.json"
+DB_PATH = Path.home() / ".stocklocal"
 
 
 def ensure_db() -> None:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     if not DB_PATH.exists():
         DB_PATH.write_text(json.dumps({"trades": []}, indent=2) + "\n", encoding="utf-8")
 

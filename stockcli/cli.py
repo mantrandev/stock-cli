@@ -14,8 +14,8 @@ def print_usage() -> None:
         "Usage:\n"
         "  stock <symbol>\n"
         "  stock mine\n"
-        "  stock buy <symbol> <amount>\n"
-        "  stock sell <symbol> <amount>"
+        "  stock buy <symbol> <price> <amount>\n"
+        "  stock sell <symbol> <price> <amount>"
     )
 
 
@@ -41,11 +41,16 @@ def show_quote(symbol: str) -> int:
     return 0
 
 
-def record_trade(trade_type: str, symbol: str, amount_input: str) -> int:
+def record_trade(trade_type: str, symbol: str, price_input: str, amount_input: str) -> int:
+    try:
+        price = float(price_input)
+        if price <= 0:
+            raise ValueError
+    except ValueError:
+        raise ValueError("Price must be a positive number.")
     amount = parse_share_amount(amount_input)
     db = load_db()
-    quote = fetch_quote(symbol)
-    trade = create_trade(trade_type, symbol, amount, quote["price"])
+    trade = create_trade(trade_type, symbol, amount, price)
 
     if trade_type == "sell":
         summarize_portfolio([*db["trades"], trade])
@@ -101,10 +106,10 @@ def main() -> int:
             return show_mine()
 
         if args[0] in {"buy", "sell"}:
-            if len(args) != 3:
+            if len(args) != 4:
                 print_usage()
                 return 1
-            return record_trade(args[0], args[1], args[2])
+            return record_trade(args[0], args[1], args[2], args[3])
 
         if len(args) == 1:
             return show_quote(args[0])
