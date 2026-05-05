@@ -64,12 +64,14 @@ def print_mine(summary: dict) -> None:
     if not summary["holdings"]:
         print("No open positions.")
     else:
-        print("SYMBOL  SHARES  AVG COST     LAST         VALUE        UPNL")
+        print("SYMBOL  SHARES  AVG COST     COST         LAST         VALUE        UPNL")
         for holding in summary["holdings"]:
+            total_cost = holding["averageCost"] * holding["shares"]
             row = [
                 holding["symbol"].ljust(6),
                 str(holding["shares"]).rjust(6),
                 format_vnd(holding["averageCost"]).rjust(12),
+                format_vnd(total_cost).rjust(12),
                 format_optional_vnd(holding["lastPrice"]).rjust(12),
                 format_vnd(holding["marketValue"]).rjust(12),
                 format_vnd(holding["unrealizedPnl"]).rjust(12),
