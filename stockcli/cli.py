@@ -13,11 +13,15 @@ from stockcli.quote import fetch_quote
 def print_usage() -> None:
     print(
         "Usage:\n"
-        "  stock <symbol>\n"
+        "  stock <symbol>              # global stock (Yahoo Finance)\n"
         "  stock mine\n"
         "  stock buy <symbol> <price> <amount>\n"
         "  stock sell <symbol> <price> <amount>\n"
-        "  stock clear"
+        "  stock clear\n"
+        "  stockvn <symbol>            # Vietnam stock (VPS)\n"
+        "  fstock <symbol>             # alias for stock\n"
+        "  crypto <symbol>             # crypto/USDT (Binance)\n"
+        "  gold                        # gold spot price"
     )
 
 
