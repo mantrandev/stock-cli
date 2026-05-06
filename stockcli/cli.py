@@ -44,6 +44,13 @@ def show_quote(symbol: str) -> int:
     return 0
 
 
+def show_quote_vn(symbol: str) -> int:
+    quote = fetch_quote(symbol)
+    exchange = f" ({quote['exchange']})" if quote.get("exchange") else ""
+    print(f"{quote['symbol']}{exchange}: {format_vnd(quote['price'])}")
+    return 0
+
+
 def record_trade(trade_type: str, symbol: str, price_input: str, amount_input: str) -> int:
     try:
         price = float(price_input)
@@ -135,6 +142,23 @@ def show_crypto(symbol: str) -> int:
     result = fetch_crypto(symbol)
     print(f"{result['symbol']}/USDT: ${result['price']:,.2f}")
     return 0
+
+
+def stockvn_main() -> int:
+    args = sys.argv[1:]
+    if not args or args[0] in {"help", "--help", "-h"}:
+        print("Usage:\n  stockvn <symbol>")
+        return 0 if args else 1
+
+    try:
+        if len(args) == 1:
+            return show_quote_vn(args[0])
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    print("Usage:\n  stockvn <symbol>")
+    return 1
 
 
 def show_fstock(symbol: str) -> int:
