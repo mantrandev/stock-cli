@@ -161,6 +161,16 @@ def fstock_main() -> int:
     return 1
 
 
+def gold_main() -> int:
+    try:
+        result = fetch_fstock("GC=F")
+        print(f"Gold: ${result['price']:,.2f} {result['currency']}/oz")
+        return 0
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+
 def crypto_main() -> int:
     args = sys.argv[1:]
     if not args or args[0] in {"help", "--help", "-h"}:
