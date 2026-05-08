@@ -13,6 +13,33 @@ from stockcli.portfolio import (
 from stockcli.quote import fetch_quote
 
 
+def _usage_all() -> None:
+    print(
+        "Commands:\n"
+        "  stock <symbol>                    Vietnam stock quote\n"
+        "  stock buy <symbol> <price> <qty>\n"
+        "  stock sell <symbol> <price> <qty>\n"
+        "  stock remove <symbol> <qty>\n"
+        "\n"
+        "  crypto <symbol>                   Crypto quote (Binance)\n"
+        "  crypto buy <symbol> <price> <qty>\n"
+        "  crypto sell <symbol> <price> <qty>\n"
+        "  crypto remove <symbol> <qty>\n"
+        "\n"
+        "  gold                              Gold spot price\n"
+        "  gold buy <price> <qty_oz>\n"
+        "  gold sell <price> <qty_oz>\n"
+        "  gold remove <qty_oz>\n"
+        "\n"
+        "  port-mine                         All holdings with live PnL\n"
+        "  port-mine clear\n"
+        "  port-mine remove <symbol> <qty>\n"
+        "\n"
+        "  fstock <symbol>                   Foreign stock quote (Yahoo Finance)\n"
+        "  stockvn <symbol>                  Vietnam stock quote (alias)"
+    )
+
+
 def _usage_stock() -> None:
     print(
         "Usage:\n"
@@ -446,6 +473,11 @@ def port_mine_main() -> int:
 
     _usage_mine()
     return 1
+
+
+def help_main() -> int:
+    _usage_all()
+    return 0
 
 
 if __name__ == "__main__":
