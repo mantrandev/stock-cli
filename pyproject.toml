@@ -8,6 +8,9 @@ version = "0.3.0"
 description = "Terminal CLI for Vietnam stock quotes and a local JSON portfolio."
 requires-python = ">=3.9"
 
+[tool.setuptools.packages.find]
+where = ["."]
+
 [project.scripts]
 stock = "stockcli.cli:main"
 crypto = "stockcli.cli:crypto_main"
