@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from uuid import uuid4
+ASSET_TYPES = {"vn", "crypto", "gold"}
+ASSET_CURRENCIES = {"vn": "VND", "crypto": "USD", "gold": "USD"}
 
 
 def normalize_symbol(symbol: str) -> str:
@@ -16,102 +15,71 @@ def parse_share_amount(value: str | int) -> int:
         amount = int(value)
     except (TypeError, ValueError) as exc:
         raise ValueError("Amount must be a positive integer.") from exc
-
     if amount <= 0 or str(amount) != str(value).strip():
         raise ValueError("Amount must be a positive integer.")
     return amount
+
+
+def parse_quantity(value: str | float | int, integer_only: bool = False) -> float:
+    if integer_only:
+        return float(parse_share_amount(value))
+    try:
+        qty = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Quantity must be a positive number.") from exc
+    if qty <= 0:
+        raise ValueError("Quantity must be positive.")
+    return qty
 
 
 def format_vnd(value: float | int) -> str:
     return f"{round(value):,} VND"
 
 
-def create_trade(
-    trade_type: str,
-    symbol: str,
-    shares: int,
-    price: float,
-    executed_at: str | None = None,
-) -> dict:
-    if trade_type not in {"buy", "sell"}:
-        raise ValueError("Trade type must be buy or sell.")
-    if price <= 0:
-        raise ValueError("Price must be positive.")
-
-    return {
-        "id": uuid4().hex,
-        "type": trade_type,
-        "symbol": normalize_symbol(symbol),
-        "shares": parse_share_amount(shares),
-        "price": float(price),
-        "executedAt": executed_at or datetime.now(timezone.utc).isoformat(),
-    }
+def format_usd(value: float) -> str:
+    return f"${value:,.2f}"
 
 
-@dataclass
-class Position:
-    symbol: str
-    shares: int = 0
-    cost: float = 0.0
+def _key(asset: str, symbol: str) -> str:
+    return f"{asset}:{symbol}"
 
 
-def summarize_portfolio(trades: list[dict], live_prices: dict[str, float | None] | None = None) -> dict:
-    live_prices = live_prices or {}
-    positions: dict[str, Position] = {}
-    realized_pnl = 0.0
+def apply_buy(positions: dict, asset: str, symbol: str, qty: float, price: float) -> None:
+    symbol = normalize_symbol(symbol)
+    key = _key(asset, symbol)
+    if key not in positions:
+        positions[key] = {
+            "asset": asset,
+            "symbol": symbol,
+            "quantity": 0.0,
+            "avgCost": 0.0,
+            "currency": ASSET_CURRENCIES[asset],
+            "realizedPnl": 0.0,
+        }
+    pos = positions[key]
+    total_cost = pos["quantity"] * pos["avgCost"] + qty * price
+    pos["quantity"] += qty
+    pos["avgCost"] = total_cost / pos["quantity"]
 
-    for trade in trades:
-        symbol = normalize_symbol(trade["symbol"])
-        position = positions.setdefault(symbol, Position(symbol=symbol))
-        shares = parse_share_amount(trade["shares"])
-        price = float(trade["price"])
 
-        if trade["type"] == "buy":
-            position.shares += shares
-            position.cost += shares * price
-        elif trade["type"] == "sell":
-            if position.shares < shares:
-                raise ValueError(f"Not enough shares to sell {symbol}.")
-            average_cost = position.cost / position.shares
-            realized_pnl += (price - average_cost) * shares
-            position.shares -= shares
-            position.cost -= average_cost * shares
-            if position.shares == 0:
-                position.cost = 0.0
-        else:
-            raise ValueError(f"Unsupported trade type: {trade['type']}")
+def apply_sell(positions: dict, asset: str, symbol: str, qty: float, price: float) -> None:
+    symbol = normalize_symbol(symbol)
+    key = _key(asset, symbol)
+    pos = positions.get(key)
+    if pos is None or pos["quantity"] < qty - 1e-9:
+        raise ValueError(f"Not enough {symbol} to sell.")
+    pos["realizedPnl"] += (price - pos["avgCost"]) * qty
+    pos["quantity"] -= qty
+    if pos["quantity"] < 1e-9:
+        pos["quantity"] = 0.0
 
-    holdings = []
-    unrealized_pnl = 0.0
-    market_value = 0.0
 
-    for position in sorted(positions.values(), key=lambda item: item.symbol):
-        if position.shares == 0:
-            continue
-
-        average_cost = position.cost / position.shares
-        last_price = live_prices.get(position.symbol)
-        effective_price = average_cost if last_price is None else float(last_price)
-        holding_market_value = effective_price * position.shares
-        holding_unrealized_pnl = holding_market_value - position.cost
-
-        market_value += holding_market_value
-        unrealized_pnl += holding_unrealized_pnl
-        holdings.append(
-            {
-                "symbol": position.symbol,
-                "shares": position.shares,
-                "averageCost": average_cost,
-                "lastPrice": last_price,
-                "marketValue": holding_market_value,
-                "unrealizedPnl": holding_unrealized_pnl,
-            }
-        )
-
-    return {
-        "holdings": holdings,
-        "marketValue": market_value,
-        "realizedPnl": realized_pnl,
-        "unrealizedPnl": unrealized_pnl,
-        "totalPnl": realized_pnl + unrealized_pnl,
-    }
+def apply_remove(positions: dict, asset: str, symbol: str, qty: float) -> None:
+    symbol = normalize_symbol(symbol)
+    key = _key(asset, symbol)
+    pos = positions.get(key)
+    if pos is None or pos["quantity"] < qty - 1e-9:
+        raise ValueError(f"Not enough {symbol} to remove.")
+    pos["quantity"] -= qty
+    if pos["quantity"] < 1e-9:
+        del positions[key]
