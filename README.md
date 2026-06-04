@@ -14,6 +14,25 @@ Upgrade:
 pipx upgrade stockcli
 ```
 
+## Setup (crypto)
+
+`crypto` pulls prices from CoinMarketCap, which requires an API key. Get a free key from the [CoinMarketCap API dashboard](https://pro.coinmarketcap.com/account), then save it to `~/.stockcli/config.json`:
+
+```bash
+mkdir -p ~/.stockcli
+printf '{\n  "cmc_api_key": "PASTE_KEY_HERE"\n}\n' > ~/.stockcli/config.json
+```
+
+The file must contain:
+
+```json
+{
+  "cmc_api_key": "your-coinmarketcap-key"
+}
+```
+
+Without this, only `crypto` commands fail; `stock`, `fstock`, and `gold` need no key.
+
 ## Commands
 
 ```bash
@@ -24,7 +43,7 @@ stock buy <symbol> <price> <qty>
 stock sell <symbol> <price> <qty>
 stock remove <symbol> <qty>           # Remove entry (correction, no PnL)
 
-crypto <symbol>                       # Crypto/USDT price — e.g. BTC, ETH
+crypto <symbol>                       # Crypto price (CoinMarketCap) — e.g. BTC, OKB, GT
 crypto buy <symbol> <price> <qty>
 crypto sell <symbol> <price> <qty>
 crypto remove <symbol> <qty>
@@ -85,5 +104,5 @@ Portfolio is stored locally at `~/.stocklocal`. No real orders are placed.
 |---------|--------|
 | `stock`, `stockvn` | VPS DataFeed |
 | `fstock` | Yahoo Finance |
-| `crypto` | Binance |
+| `crypto` | CoinMarketCap (API key required) |
 | `gold` | Yahoo Finance (`GC=F`) |
