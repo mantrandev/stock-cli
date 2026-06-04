@@ -21,7 +21,7 @@ def _usage_all() -> None:
         "  stock sell <symbol> <price> <qty>\n"
         "  stock remove <symbol> <qty>\n"
         "\n"
-        "  crypto <symbol>                   Crypto quote (Binance)\n"
+        "  crypto <symbol>                   Crypto quote (CoinMarketCap)\n"
         "  crypto buy <symbol> <price> <qty>\n"
         "  crypto sell <symbol> <price> <qty>\n"
         "  crypto remove <symbol> <qty>\n"
