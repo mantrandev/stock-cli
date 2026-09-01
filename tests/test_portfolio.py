@@ -1,6 +1,8 @@
 import unittest
 
-from stockcli.portfolio import apply_buy, apply_remove, apply_sell, parse_share_amount
+from stockcli.portfolio import (
+    apply_buy, apply_remove, apply_sell, parse_share_amount, resolve_asset,
+)
 
 
 class PortfolioTests(unittest.TestCase):
@@ -57,6 +59,33 @@ class PortfolioTests(unittest.TestCase):
 
         self.assertAlmostEqual(positions["crypto:BTC"]["quantity"], 0.01)
         self.assertAlmostEqual(positions["crypto:BTC"]["realizedPnl"], 25.0)
+
+
+class ResolveAssetTests(unittest.TestCase):
+    def setUp(self):
+        self.positions = {}
+        apply_buy(self.positions, "crypto", "BTC", 0.5, 70000.0)
+        apply_buy(self.positions, "vn", "HPG", 100, 22250.0)
+        apply_buy(self.positions, "gold", "GOLD", 1.5, 3200.0)
+
+    def test_resolves_asset_from_stored_position(self):
+        self.assertEqual(resolve_asset(self.positions, "btc"), "crypto")
+        self.assertEqual(resolve_asset(self.positions, "HPG"), "vn")
+        self.assertEqual(resolve_asset(self.positions, "GOLD"), "gold")
+
+    def test_rejects_symbol_with_no_open_position(self):
+        with self.assertRaisesRegex(ValueError, "No open position for ETH"):
+            resolve_asset(self.positions, "ETH")
+
+    def test_ignores_fully_closed_position(self):
+        apply_remove(self.positions, "vn", "HPG", 100)
+        with self.assertRaisesRegex(ValueError, "No open position for HPG"):
+            resolve_asset(self.positions, "HPG")
+
+    def test_rejects_symbol_held_under_two_assets(self):
+        apply_buy(self.positions, "vn", "BTC", 10, 15000.0)
+        with self.assertRaisesRegex(ValueError, "held as crypto and vn"):
+            resolve_asset(self.positions, "BTC")
 
 
 if __name__ == "__main__":

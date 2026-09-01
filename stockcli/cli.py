@@ -8,7 +8,7 @@ from stockcli.fstock import fetch_fstock
 from stockcli.db import load_positions, save_positions
 from stockcli.portfolio import (
     apply_buy, apply_remove, apply_sell,
-    format_usd, format_vnd, parse_quantity,
+    format_usd, format_vnd, parse_quantity, resolve_asset,
 )
 from stockcli.quote import fetch_quote
 
@@ -461,11 +461,8 @@ def port_mine_main() -> int:
             if len(args) != 3:
                 _usage_mine()
                 return 1
-            asset_map = {"vn": "vn", "crypto": "crypto", "gold": "gold"}
             symbol = args[1].upper()
-            qty_str = args[2]
-            asset = "gold" if symbol == "GOLD" else ("vn" if symbol.isalpha() and len(symbol) <= 5 else "crypto")
-            return _remove(asset, symbol, qty_str)
+            return _remove(resolve_asset(load_positions(), symbol), symbol, args[2])
     except Exception as exc:
         print(str(exc), file=sys.stderr)
         return 1

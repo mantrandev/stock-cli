@@ -44,6 +44,25 @@ def _key(asset: str, symbol: str) -> str:
     return f"{asset}:{symbol}"
 
 
+def resolve_asset(positions: dict, symbol: str) -> str:
+    symbol = normalize_symbol(symbol)
+    assets = sorted(
+        {
+            pos["asset"]
+            for pos in positions.values()
+            if pos["symbol"] == symbol and pos["quantity"] > 1e-9
+        }
+    )
+    if not assets:
+        raise ValueError(f"No open position for {symbol}.")
+    if len(assets) > 1:
+        joined = " and ".join(assets)
+        raise ValueError(
+            f"{symbol} is held as {joined}; remove it with that command instead."
+        )
+    return assets[0]
+
+
 def apply_buy(positions: dict, asset: str, symbol: str, qty: float, price: float) -> None:
     symbol = normalize_symbol(symbol)
     key = _key(asset, symbol)
