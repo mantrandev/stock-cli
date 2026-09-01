@@ -1,8 +1,10 @@
 import json
 import unittest
+from io import BytesIO
 from unittest.mock import patch
+from urllib.error import HTTPError
 
-from stockcli.quote import _pick_price, fetch_quote
+from stockcli.quote import fetch_quote
 
 
 class FakeResponse:
@@ -19,26 +21,36 @@ class FakeResponse:
         return None
 
 
-class QuoteTests(unittest.TestCase):
-    def test_pick_price_prefers_close_then_match_then_reference(self):
-        self.assertEqual(_pick_price({"closePrice": "25300"}), 25300)
-        self.assertEqual(_pick_price({"lastPrice": "25200"}), 25200)
-        self.assertEqual(_pick_price({"r": "25000"}), 25000)
-        self.assertIsNone(_pick_price({"closePrice": None}))
+def _ohlc(*closes):
+    return {
+        "t": list(range(len(closes))),
+        "o": list(closes),
+        "h": list(closes),
+        "l": list(closes),
+        "c": list(closes),
+        "v": [0] * len(closes),
+        "nextTime": 0,
+    }
 
-    def test_fetch_quote_reads_from_vps_payload(self):
-        with patch(
-            "stockcli.quote.urlopen",
-            return_value=FakeResponse([{"sym": "HPG", "boardId": "G1", "closePrice": "25300"}]),
-        ):
+
+class QuoteTests(unittest.TestCase):
+    def test_fetch_quote_uses_latest_close_in_vnd(self):
+        with patch("stockcli.quote.urlopen", return_value=FakeResponse(_ohlc(22.05, 22.25))):
             quote = fetch_quote("hpg")
 
-        self.assertEqual(quote, {"symbol": "HPG", "exchange": "G1", "price": 25300})
+        self.assertEqual(quote, {"symbol": "HPG", "price": 22250.0})
 
-    def test_fetch_quote_errors_when_payload_is_empty(self):
-        with patch("stockcli.quote.urlopen", return_value=FakeResponse([])):
+    def test_fetch_quote_errors_when_payload_has_no_candles(self):
+        with patch("stockcli.quote.urlopen", return_value=FakeResponse({"t": [], "c": []})):
             with self.assertRaisesRegex(RuntimeError, "No price returned"):
                 fetch_quote("HPG")
+
+    def test_fetch_quote_errors_on_invalid_symbol(self):
+        body = b'{"status":400,"code":"BAD_REQUEST","message":"invalid symbol"}'
+        error = HTTPError(url=None, code=400, msg="Bad Request", hdrs=None, fp=BytesIO(body))
+        with patch("stockcli.quote.urlopen", side_effect=error):
+            with self.assertRaisesRegex(RuntimeError, "Symbol not found: ZZZZ"):
+                fetch_quote("zzzz")
 
 
 if __name__ == "__main__":

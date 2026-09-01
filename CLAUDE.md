@@ -16,7 +16,7 @@ stock mine                  # Portfolio with live PnL
 stock buy <symbol> <amount>
 stock sell <symbol> <amount>
 fstock <symbol>             # Foreign stock quote (Yahoo Finance)
-crypto <symbol>             # Crypto price (CoinMarketCap, key required)
+crypto <symbol>             # Crypto price (Binance; CMC fallback needs key)
 ```
 
 ## Running Tests
@@ -34,9 +34,9 @@ No external dependencies — stdlib only (`urllib`, `json`, `pathlib`, `dataclas
 Five modules, each with a single responsibility:
 
 - **`cli.py`** — argument dispatch and output formatting. Entry points: `main()`, `fstock_main()`, `crypto_main()`.
-- **`quote.py`** — HTTP fetch from VPS API (`bgapidatafeed.vps.com.vn`). `_pick_price` tries keys in order: `closePrice → lastPrice → highPrice → lowPrice → r`.
+- **`quote.py`** — HTTP fetch from Entrade DNSE chart API (`services.entrade.com.vn/chart-api/v2/ohlcs/stock`, `resolution=1D`). Takes the last daily close from the `c` array; the API quotes in thousands of VND, so the value is multiplied by `PRICE_UNIT` (1000). A 400 response means an unknown symbol.
 - **`fstock.py`** — HTTP fetch from Yahoo Finance v8 chart API. Returns price and currency for any exchange-listed symbol.
-- **`crypto.py`** — HTTP fetch from CoinMarketCap `cryptocurrency/quotes/latest` (`convert=USD`). Reads the API key from `~/.stockcli/config.json` (`cmc_api_key`); guards the duplicate-symbol list case.
+- **`crypto.py`** — Binance `ticker/price` on `<SYMBOL>USDT` first (no key). A 400 means no such pair, and it falls back to CoinMarketCap `cryptocurrency/quotes/latest` using `cmc_api_key` from `~/.stockcli/config.json`; the CMC path guards the duplicate-symbol list case. `pair` in the result marks which source answered.
 - **`portfolio.py`** — pure functions for trade validation, position tracking, and PnL calculation. `summarize_portfolio(trades, live_prices)` is the core; called twice in `show_mine` — once without prices to get symbols, once with live prices for the final display.
 - **`db.py`** — thin JSON read/write layer. DB path is hardcoded relative to the package root: `../../db/portfolio.json`.
 

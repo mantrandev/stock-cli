@@ -16,7 +16,9 @@ pipx upgrade stockcli
 
 ## Setup (crypto)
 
-`crypto` pulls prices from CoinMarketCap, which requires an API key. Get a free key from the [CoinMarketCap API dashboard](https://pro.coinmarketcap.com/account), then save it to `~/.stockcli/config.json`:
+No key needed for coins with a Binance USDT pair — that covers BTC, ETH and most of the market.
+
+Only symbols Binance does not list (OKB, GT, ...) need a CoinMarketCap key. Get a free one from the [CoinMarketCap API dashboard](https://pro.coinmarketcap.com/account), then save it to `~/.stockcli/config.json`:
 
 ```bash
 mkdir -p ~/.stockcli
@@ -31,7 +33,7 @@ The file must contain:
 }
 ```
 
-Without this, only `crypto` commands fail; `stock`, `fstock`, and `gold` need no key.
+Without it, `crypto BTC` still works; `crypto OKB` reports that no Binance pair exists. `stock`, `fstock`, and `gold` never need a key.
 
 ## Commands
 
@@ -43,7 +45,7 @@ stock buy <symbol> <price> <qty>
 stock sell <symbol> <price> <qty>
 stock remove <symbol> <qty>           # Remove entry (correction, no PnL)
 
-crypto <symbol>                       # Crypto price (CoinMarketCap) — e.g. BTC, OKB, GT
+crypto <symbol>                       # Crypto price (Binance, CMC fallback) — e.g. BTC, OKB, GT
 crypto buy <symbol> <price> <qty>
 crypto sell <symbol> <price> <qty>
 crypto remove <symbol> <qty>
@@ -102,7 +104,7 @@ Portfolio is stored locally at `~/.stocklocal`. No real orders are placed.
 
 | Command | Source |
 |---------|--------|
-| `stock`, `stockvn` | VPS DataFeed |
+| `stock`, `stockvn` | Entrade DNSE chart API |
 | `fstock` | Yahoo Finance |
-| `crypto` | CoinMarketCap (API key required) |
+| `crypto` | Binance spot, CoinMarketCap fallback (key only for non-Binance symbols) |
 | `gold` | Yahoo Finance (`GC=F`) |

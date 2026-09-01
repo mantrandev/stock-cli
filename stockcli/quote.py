@@ -1,53 +1,54 @@
 from __future__ import annotations
 
 import json
-from urllib.parse import quote
+import time
+from urllib.error import HTTPError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
-VPS_QUOTE_URL = "https://bgapidatafeed.vps.com.vn/getliststockdata/{symbol}"
-
-
-def _pick_price(row: dict) -> float | None:
-    for key in ("closePrice", "lastPrice", "highPrice", "lowPrice", "r"):
-        value = row.get(key)
-        if value is None:
-            continue
-        try:
-            price = float(value)
-        except (TypeError, ValueError):
-            continue
-        if price > 0:
-            return price
-    return None
+DNSE_OHLC_URL = "https://services.entrade.com.vn/chart-api/v2/ohlcs/stock"
+PRICE_UNIT = 1000.0
+LOOKBACK_DAYS = 30
 
 
 def _load_quote_payload(symbol: str) -> dict:
-    request = Request(
-        VPS_QUOTE_URL.format(symbol=quote(symbol)),
-        headers={
-            "Accept": "application/json",
-            "User-Agent": "StockCLI/0.2"
-        },
+    now = int(time.time())
+    query = urlencode(
+        {
+            "symbol": symbol,
+            "from": now - LOOKBACK_DAYS * 86400,
+            "to": now,
+            "resolution": "1D",
+        }
     )
-    with urlopen(request, timeout=10) as response:
-        return json.loads(response.read().decode("utf-8"))
+    request = Request(
+        f"{DNSE_OHLC_URL}?{query}",
+        headers={"Accept": "application/json", "User-Agent": "StockCLI/0.4"},
+    )
+    try:
+        with urlopen(request, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        if exc.code == 400:
+            raise RuntimeError(f"Symbol not found: {symbol}") from exc
+        raise
 
 
 def fetch_quote(symbol: str) -> dict:
     normalized = symbol.strip().upper()
-    rows = _load_quote_payload(normalized)
+    payload = _load_quote_payload(normalized)
 
-    if not isinstance(rows, list) or not rows:
+    closes = payload.get("c")
+    if not closes:
         raise RuntimeError(f"No price returned for {normalized}.")
 
-    row = rows[0]
-    price = _pick_price(row)
-    if price is None:
+    try:
+        price = float(closes[-1]) * PRICE_UNIT
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(f"Could not read a usable price for {normalized}.") from exc
+
+    if price <= 0:
         raise RuntimeError(f"Could not read a usable price for {normalized}.")
 
-    return {
-        "symbol": str(row.get("sym", normalized)).upper(),
-        "exchange": row.get("boardId"),
-        "price": price,
-    }
+    return {"symbol": normalized, "price": price}

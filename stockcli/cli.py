@@ -21,7 +21,7 @@ def _usage_all() -> None:
         "  stock sell <symbol> <price> <qty>\n"
         "  stock remove <symbol> <qty>\n"
         "\n"
-        "  crypto <symbol>                   Crypto quote (CoinMarketCap)\n"
+        "  crypto <symbol>                   Crypto quote (Binance, CMC fallback)\n"
         "  crypto buy <symbol> <price> <qty>\n"
         "  crypto sell <symbol> <price> <qty>\n"
         "  crypto remove <symbol> <qty>\n"
@@ -91,14 +91,13 @@ def _parse_price(value: str) -> float:
 
 def show_quote_vn(symbol: str) -> int:
     quote = fetch_quote(symbol)
-    exchange = f" ({quote['exchange']})" if quote.get("exchange") else ""
-    print(f"{quote['symbol']}{exchange}: {format_vnd(quote['price'])}")
+    print(f"{quote['symbol']}: {format_vnd(quote['price'])}")
     return 0
 
 
 def show_crypto(symbol: str) -> int:
     result = fetch_crypto(symbol)
-    print(f"{result['symbol']}/USDT: {format_usd(result['price'])}")
+    print(f"{result['pair']}: {format_usd(result['price'])}")
     return 0
 
 
