@@ -5,3 +5,4 @@ dist/
 build/
 .venv/
 db/portfolio.json
+.DS_Store
